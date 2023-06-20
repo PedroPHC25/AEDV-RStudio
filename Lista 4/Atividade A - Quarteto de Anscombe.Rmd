@@ -1,0 +1,89 @@
+---
+title: "AEDV - Lista 1 - Atividade A: Quarteto de Anscombe"
+author: "Pedro Henrique Coterli"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    number_sections: no
+    highlight: default
+    theme: united
+    toc: no
+    toc_float:
+      collapsed: yes
+      smmoth_scroll: no
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+
+Para o primeiro exercício, primeiramente, é claro, eu instalei e ativei a biblioteca do ggplot2. Em seguida, encontrei a biblioteca "datasets", que possuía uma tabela com os dados do Quarteto de Anscombe. Assim, instalei ela e salvei essa tabela em uma variável.
+
+```
+install.packages('ggplot2')
+library(ggplot2)
+install.packages('datasets')
+library(datasets)
+
+ans = datasets::anscombe
+```
+
+Em seguida, comecei a gerar os 4 gráficos de dispersão utilizando as funções `ggplot` e `geom_point`.
+
+```
+graph1 = ggplot(ans, aes(x = x1, y = y1)) + geom_point()
+```
+O mesmo eu fiz para os outros 3 gráficos.  
+Em seguida, adicionei a linha de dispersão utilizando a função `geom_smooth`.
+
+```
+graph1 = graph1 + geom_smooth(method = 'lm', se = FALSE)
+```
+
+Após isso, alterei os títulos dos eixos e inseri títulos simples aos gráficos (apenas por questão estética).
+
+```
+graph1 = graph1 + xlab('x') + ylab('y') + ggtitle('Gráfico 1')
+```
+
+Por fim, para deixar mais evidente a semelhança entre as estatísticas dos dados, configurei os intervalos dos eixos para que todos os gráficos ficassem com as mesmas proporções e inseri um ponto vermelho referente às coordenadas das médias de x e de y.
+
+```
+graph1 = graph1 + xlim(4, 19) + ylim(3, 13) + geom_point((aes(x = mean(ans[,1]), y = mean(ans[,5])), colour = "red", size = 2))
+```
+
+Agora, para unir os 4 gráficos em uma única imagem, encontrei um pacote chamado "patchwork", instalei-o e gerei a imagem final.
+
+```
+install.packages('patchwork')
+library(patchwork)
+
+graph1 + graph2 + graph3 + graph4
+```
+
+O código mais resumido e compilado está logo abaixo:
+
+```{r}
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+if(!require(datasets)) install.packages("datasets", repos = "http://cran.us.r-project.org")
+if(!require(patchwork)) install.packages("patchwork", repos = "http://cran.us.r-project.org")
+library(ggplot2)
+library(datasets)
+library(patchwork)
+
+ans = datasets::anscombe
+
+graph1 = ggplot(ans, aes(x = x1, y = y1)) + geom_point() + geom_smooth(method = 'lm', se = FALSE) + xlab('x') + ylab('y') + ggtitle('Gráfico 1') + xlim(4, 19) + ylim(3, 13) + geom_point(aes(x = mean(ans[,1]), y = mean(ans[,5])), colour = "red", size = 2)
+
+graph2 = ggplot(ans, aes(x = x2, y = y2)) + geom_point() + geom_smooth(method = 'lm', se = FALSE) + xlab('x') + ylab('y') + ggtitle('Gráfico 2') + xlim(4, 19) + ylim(3, 13) + geom_point(aes(x = mean(ans[,2]), y = mean(ans[,6])), colour = "red", size = 2)
+
+graph3 = ggplot(ans, aes(x = x3, y = y3)) + geom_point() + geom_smooth(method = 'lm', se = FALSE) + xlab('x') + ylab('y') + ggtitle('Gráfico 3') + xlim(4, 19) + ylim(3, 13) + geom_point(aes(x = mean(ans[,3]), y = mean(ans[,7])), colour = "red", size = 2)
+
+graph4 = ggplot(ans, aes(x = x4, y = y4)) + geom_point() + geom_smooth(method = 'lm', se = FALSE) + xlab('x') + ylab('y') + ggtitle('Gráfico 4') + xlim(4, 19) + ylim(3, 13) + geom_point(aes(x = mean(ans[,4]), y = mean(ans[,8])), colour = "red", size = 2)
+
+graph1 + graph2 + graph3 + graph4
+```

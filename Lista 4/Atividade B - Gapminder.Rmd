@@ -1,0 +1,204 @@
+---
+title: "AEDV - Lista 1 - Atividade B: Gapminder"
+author: "Pedro Henrique Coterli"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    number_sections: no
+    highlight: default
+    theme: united
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smmoth_scroll: no
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+# Gráfico original
+
+Primeiramente, eu criei o mesmo gráfico mostrado no final do capítulo 3 do Healey. Para começar, instalei e carreguei a biblioteca "gapminder":
+
+```{r}
+if(!require(gapminder)) install.packages("gapminder", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+library(gapminder)
+library(ggplot2)
+```
+
+Em seguida, gerei o gráfico de dispersão atribuindo a variável "Renda per capita" para o eixo x, a "Expectativa de vida" para o eixo y e o "Continente" para a cor (coloquei essa dentro do "geom_point" para que o gráfico não gerasse uma linha de regressão para cada continente):
+
+```{r}
+g1 = ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(aes(color = continent))
+
+g1
+```
+
+Após isso, inseri a linha de regressão:
+
+```{r}
+g1 = g1 + geom_smooth()
+
+g1
+```
+
+Por fim, ajustei a escala do eixo x e seus rótulos, e o resultado final foi o seguinte:
+
+```{r}
+g1 = g1 + scale_x_log10(labels = scales::dollar)
+
+g1
+```
+
+Agora, começarei a fazer algumas mudanças e personalizações nesse gráfico.
+
+# Mundo em 2007
+
+Inicialmente, notemos que esse gráfico está plotando os pontos correspondentes a todos os anos dos registros ao mesmo tempo, o que não faz muito sentido. Assim, a primeira alteração que realizei foi filtrar os dados apenas para o ano mais recente da base, 2007, com a função "subset":
+
+```{r}
+g2 = ggplot(subset(gapminder, year == 2007), aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(aes(color = continent)) +
+  geom_smooth() +
+  scale_x_log10(labels = scales::dollar)
+
+g2
+```
+
+Em seguida, achei que seria interessante configurar o tamanho dos pontos ("size") para representar a população dos países. Configurei esse parâmetro dentro da função "geom_point" para que ele não inteferisse na legenda.
+
+```{r}
+g2 = ggplot(subset(gapminder, year == 2007), aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(aes(color = continent, size = pop)) +
+  geom_smooth() +
+  scale_x_log10(labels = scales::dollar)
+
+g2
+```
+
+Após isso, retirei a margem de erro da linha de regressão com o argumento "se = F" e colori-a de preto para destacá-la.
+
+```{r}
+g2 = ggplot(subset(gapminder, year == 2007), aes(x = gdpPercap, y = lifeExp, label = country)) +
+  geom_point(aes(color = continent, size = pop)) +
+  geom_smooth(se = F, color = "black") +
+  scale_x_log10(labels = scales::dollar)
+
+g2
+```
+
+Agora, começo a personalização em si do gráfico. Em primeiro lugar, configurei os textos utilizando a função "labs" e a função "scale_size" para alterar o formato dos valores da legenda de tamanho de notação científica para números. Além disso, importei a biblioteca "ggrepel" para inserir rótulos nos pontos mais isolados do gráfico.
+
+```{r}
+if(!require(ggrepel)) install.packages("ggrepel", repos = "http://cran.us.r-project.org")
+library(ggrepel)
+
+g2 = g2 + 
+  labs(x = "Renda per capita (dólares)", y = "Expectativa de vida (anos)", title = "Economia x saúde em 2007", subtitle = "Relação entre renda per capita e expectativa de vida no mundo", size = "População", color = "Continente") + 
+  scale_size(labels = scales::number) +
+  geom_text_repel(size = 3, max.overlaps = 5, aes(color = continent), show.legend = F)
+
+g2
+```
+
+A seguir, comecei a mexer com as cores do gráfico. Para isso, importei a biblioteca "RColorBrewer".
+
+```{r}
+if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = "http://cran.us.r-project.org")
+library(RColorBrewer)
+```
+
+Agora, bastou escolher uma paleta de cores para meu gráfico.
+
+```{r}
+g2 = g2 + scale_color_brewer(palette = "Set1")
+
+g2
+```
+
+Por fim, para configurar o tema, carreguei a biblioteca "ggthemes" e selecionei uma das opções.
+
+```{r}
+if(!require(ggthemes)) install.packages("ggthemes", repos = "http://cran.us.r-project.org")
+library(ggthemes)
+
+g2 = g2 + theme_clean()
+```
+
+E o meu gráfico final ficou assim:
+
+```{r}
+g2
+```
+
+
+# Continentes em 2007
+
+Em segundo lugar, decidi "separar" esse gráfico anterior por continente. Para isso, adicionei uma camada "facet_wrap":
+
+```{r}
+g3 = g2 + facet_wrap(~continent)
+
+g3
+```
+
+Entretanto, a linha de regressão perdeu um pouco da sua relevância aqui, os rótulos do eixo x estão totalmente mal formatados e a legenda das cores se tornou inútil. Assim, eliminei as linhas de regressão, configurei os textos do eixo x com a função "theme" e apaguei a legenda dos continentes com a função "guides".
+
+```{r}
+g3 = ggplot(subset(gapminder, year == 2007), aes(x = gdpPercap, y = lifeExp, size = pop, color = continent, label = country)) +
+  geom_point() +
+  scale_x_log10(labels = scales::dollar) +
+  labs(x = "Renda per capita (dólares)", y = "Expectativa de vida (anos)", title = "Economia x saúde em 2007 por continente", subtitle = "Relação entre renda per capita e expectativa de vida no mundo", size = "População", color = "Continente") + 
+  scale_size(labels = scales::number) +
+  geom_text_repel(size = 3, max.overlaps = 10, aes(color = continent)) +
+  scale_color_brewer(palette = "Set1") +
+  theme_clean() +
+  facet_wrap(~continent) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  guides(color = "none")
+```
+
+E o resultado final foi este:
+
+```{r}
+g3
+```
+
+# Mundo por ano
+
+Por último, resolvi me inspirar um pouco no Hans Rosling e criar um gráfico que exibe essa mesma relação renda per capita x expectativa de vida, mas para todos os anos da base de dados. Para isso, comecei gerando um gráfico de dispersão:
+
+```{r}
+g4 = ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, color = continent)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(se = F, color = "black") +
+  scale_x_log10(labels = scales::dollar)
+
+g4
+```
+
+Em seguida, adicionei as camadas por ano com a função "facet_wrap".
+
+```{r}
+g4 = g4 + facet_wrap(~year)
+
+g4
+```
+
+Para terminar, bastou ajeitar novamente os textos, as cores e o tema e pronto!
+
+```{r}
+g4 = g4 +
+  labs(x = "Renda per capita (dólares)", y = "Expectativa de vida (anos)", title = "Economia x saúde por ano", subtitle = "Relação entre renda per capita e expectativa de vida no mundo", color = "Continente") +
+  theme_clean() +
+  theme(axis.text.x = element_text(size = 6)) +
+  scale_color_brewer(palette = "Set1")
+
+g4
+```

@@ -1,0 +1,71 @@
+---
+title: "Healy"
+author: "Pedro Henrique Coterli"
+date: "2023-04-29"
+output: html_document
+---
+
+# Capítulo 3
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.width = 8, fig.height = 5)
+```
+
+- Função "scale": altera o formato da escala do eixo (ex: de decimal para logarítmico).
+    - "labels": altera o formato do texto da escala do eixo (biblioteca "scales"). É colocada dentro do "scale".
+- Parâmetro "alpha": altera a transparência do objeto (0 é transparente e 1 é opaco).
+- "labs": camada que altera os textos do gráfico (x, y, title, subtitle e caption).
+- Parâmetro "fill": altera a cor de áreas, como sombras de linhas de regressão e barras.
+- Função "log": configura as cores de um elemento para um gradiente em função de uma variável.
+- "fig.width" e "fig.height": alteram o tamanho das imagens geradas no RMarkdown, devendo ser colocadas como uma função default no primeiro bloco de comando ("knitr::opts_chunk$set(fig.width = 8, fig.height = 5)") ou nas configurações de um bloco individual dentro das chaves.
+- "ggsave": Salva a última imagem gerada pelo terminal.
+    - "plot": Salva um gráfico salvo em uma variável.
+- Biblioteca "here": possibilita configurar onde uma imagem será salva.
+
+
+```{r, fig.width=5, fig.height=3}
+library(tidyverse)
+library(gapminder)
+
+p = ggplot(gapminder, aes(x = gdpPercap, y = lifeExp))
+p + geom_point(alpha = 0.5, aes(color = log(pop))) + geom_smooth(method = 'loess') + scale_x_log10(labels = scales::dollar) + labs(x = 'Renda per capita', y = 'Expectativa de vida em anos', title = 'Crescimento econômico e expectativa de vida', subtitle = 'Os pontos de dados são países-ano', caption = 'Fonte: Gapminder')
+
+```
+
+# Capítulo 8
+
+
+- "subset": Filtra uma base de dados.
+- "geom_text_repel": Legenda os pontos do gráfico. Precisa da biblioteca "ggrepel".
+- "theme": Pode alterar a posição da legenda.
+- RColorBrewer: Biblioteca de paletas de cores.
+    - "scale_color_brewer" para adicionar a paleta como uma camada.
+    - É possível criar uma paleta fazendo uma lista com os códigos das cores e usando a função "scale_color_manual".
+    - "brewer.pal": Pega uma paleta padrão do R.
+- "theme_set": Define um tema para todos os gráficos subsequentes.
+    - É possível configurar o tema de um gráfico individualmente adicionando uma camada "theme_<nome>()".
+    - "ggthemes": Pacote de temas.
+    
+
+
+
+```{r}
+library(socviz)
+library(ggrepel)
+library(RColorBrewer)
+library(dichromat)
+library(ggthemes)
+
+q0 = ggplot(subset(asasec, Year == 2014), aes(x = Members, y = Revenues, label = Sname))
+q1 = q0 + geom_smooth(method = 'lm', se = FALSE, color = 'gray80') + geom_point(aes(color = Journal))
+q2 = q1 + geom_text_repel(data = subset(asasec, Year == 2014 & Revenues > 7000), size = 2)
+q3 = q2 + labs(x = 'Membership', y = 'Revenues', color = 'Section has own journal', title = 'ASA Sections', subtitle = '2014 Calendar Year', caption = 'Source: ASA annual report')
+q4 = q3 + scale_y_continuous(labels = scales::dollar) + theme(legend.position = 'bottom')
+
+r = ggplot(organdata, aes(x = roads, y = donors, color = world))
+#r + geom_point(size = 2) + scale_color_brewer(palette = 'Set2') + theme(legend.position = 'top')
+#r + geom_point(size = 2) + scale_color_brewer(palette = 'Pastel2') + theme(legend.position = 'top')
+r + geom_point(size = 2) + scale_color_brewer(palette = 'Dark2') + theme(legend.position = 'top') + theme_classic()
+```
+

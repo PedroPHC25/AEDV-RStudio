@@ -1,0 +1,168 @@
+---
+title: "Análise Exploratória de Dados e Visualização - Lista 5"
+author: "Pedro Henrique Coterli"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    number_sections: no
+    highlight: default
+    theme: united
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smmoth_scroll: no
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+# Capítulo 4
+
+```{r}
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(gapminder)) install.packages("gapminder", repos = "http://cran.us.r-project.org")
+if(!require(ggthemes)) install.packages("ggthemes", repos = "http://cran.us.r-project.org")
+if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = "http://cran.us.r-project.org")
+```
+
+### Dados agrupados e a estética "group"
+
+Primeiramente, utilizando os dados do Gapminder, criei um gráfico de renda per capita ao longo do tempo contendo as informações dos 5 países com as maiores rendas per capita do mundo, e o resultado foi este:
+
+```{r}
+gapminder = gapminder
+graph42 = ggplot(subset(gapminder, country %in% c("Switzerland", "Norway", "Ireland", "Qatar", "Iceland", "United States")), aes(x = year, y = gdpPercap, color = country)) +
+  geom_line(aes(group = country), size = 1.5) +
+  labs(x = "Ano", y = "Renda per capita", color = "País", title = "Maiores rendas per capita do mundo", subtitle = "Dados dos países ao longo dos anos") +
+  scale_color_brewer(palette = "Set1", labels = c("Islândia", "Irlanda", "Noruega", "Suíça", "Estados Unidos")) +
+  scale_y_continuous(labels = scales::dollar) +
+  theme_clean()
+graph42
+```
+
+### Facetamento para fazer múltiplos pequenos
+
+Em seguida, reproduzi o gráfico facetado da renda per capita por continente, apenas alterando a parte estética:
+
+```{r}
+graph43 = ggplot(gapminder, aes(x = year, y = gdpPercap)) +
+  geom_line(aes(group = country), alpha = 0.3) +
+  facet_wrap(~continent, ncol = 5, labeller = as_labeller(c("Africa" = "África", "Americas" = "Américas", "Asia" = "Ásia", "Europe" = "Europa", "Oceania" = "Oceania"))) +
+  scale_y_log10(labels = scales::dollar) +
+  geom_smooth(color = "red", se = F) +
+  labs(x = "Ano", y = "Renda per capita", title = "Renda per capita por tempo", subtitle = "Análise da renda per capita por continente ao longo dos anos") +
+  theme_clean() +
+  theme(axis.text.x = element_text(size = 5))
+graph43
+```
+
+### Geoms podem transformar dados
+
+Após isso, quis fazer um gráfico com a mesma ideia apresentada pelo livro: comparar a distribuição de religiões pelas regiões com os dados do banco "gss_sm". No entanto, decidi fazer isso de uma forma um pouco diferente: por meio de um gráfico de barras empilhadas.
+
+```{r}
+gss_sm = socviz::gss_sm
+
+graph44 = ggplot(gss_sm, aes(x = religion, fill = bigregion)) +
+  geom_bar(position = "fill") +
+  coord_flip() +
+  labs(x = "Religião", y = NULL, fill = "Região", title = "Religião por região", subtitle = "Distribuição de cada religião entre as regiões") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(labels = c("Protestante", "Católica", "Judaica", "Nenhuma", "Outras", "Sem informação")) +
+  scale_color_brewer(palette = "Set1") +
+  scale_fill_discrete(labels = c("Nordeste", "Centro-Oeste", "Sul", "Oeste")) +
+  theme_clean()
+graph44
+```
+
+### Histogramas e gráficos de densidade
+
+Para encerrar o capítulo 4, utilizei histogramas para plotar a distribuição das faixas de renda per capita em cada continente, novamente usando os dados do Gapminder.
+
+```{r}
+graph46 = ggplot(gapminder, aes(x = gdpPercap, fill = continent)) +
+  geom_histogram() +
+  scale_x_log10(labels = scales::dollar) +
+  scale_color_brewer(palette = "Set1") +
+  facet_wrap(~continent, labeller = as_labeller(c("Africa" = "África", "Americas" = "Américas", "Asia" = "Ásia", "Europe" = "Europa", "Oceania" = "Oceania"))) +
+  labs(x = "Renda per capita", y = NULL, title = "Renda per capita por continente", subtitle = "Análise da distribuição da renda per capita em cada continente") +
+  guides(fill = F) +
+  scale_y_continuous(labels = NULL) +
+  theme(axis.ticks.y = element_blank()) +
+  theme_clean()
+graph46
+```
+
+# Capítulo 5
+
+### Usando pipes para sumarizar dados
+
+Para iniciar o 5º capítulo, realizei um pequeno tratamento com a base "gss_sm" e plotei um gráfico bem semelhante ao anterior, mas agora utilizando informações de colunas geradas manualmente.
+
+```{r}
+religiao_por_regiao = gss_sm %>% group_by(bigregion, religion) %>% summarise(total = n()) %>% mutate(percentage = (total / sum(total)))
+religiao_por_regiao
+```
+
+```{r}
+graph51 = ggplot(religiao_por_regiao, aes(x = bigregion, y = percentage, fill = religion)) +
+  geom_col() +
+  labs(x = "Região", y = NULL, title = "Região por religião", subtitle = "Distribuição das religiões em cada região", fill = "Religião") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_discrete(labels = c("Protestante", "Católica", "Judaica", "Nenhuma", "Outras", "Sem informação")) +
+  scale_x_discrete(labels = c("Nordeste", "Centro-Oeste", "Sul", "Oeste")) +
+  scale_color_brewer(palette = "Set1") +
+  theme_clean()
+graph51
+```
+
+### Variáveis contínuas por grupo ou categoria
+
+A seguir, utilizei a função "geom_jitter" para criar um gráfico da distribuição da expectativa de vida por continente a cada ano com base nos dados do Gapminder.
+
+```{r}
+graph52 = ggplot(gapminder, aes(x = lifeExp, y = year, color = continent)) +
+  geom_jitter(position = position_jitter(height = 0.5), alpha = 0.7) +
+  labs(x = "Expectativa de vida", y = "Ano", title = "Expectativa de vida por ano", subtitle = "Análise da distribuição da expectativa de vida por continente com o tempo", color = "Continente") +
+  scale_color_brewer(palette = "Set1", labels = c("África", "Américas", "Ásia", "Europa", "Oceania")) +
+  theme_clean()
+graph52
+```
+
+### Plotando texto diretamente e escrevendo e desenhando na área do gráfico
+
+Por fim, utilizei as funções da biblioteca "ggrepel" para fazer um gráfico de dispersão com rótulos nos pontos mais isolados e usei as funcionalidades da ferramenta "annotate" para destacar algumas informações desse mesmo gráfico. Esses últimos gráficos estão a seguir:
+
+```{r}
+if(!require(ggrepel)) install.packages("ggrepel", repos = "http://cran.us.r-project.org")
+```
+
+```{r}
+graph53 = ggplot(subset(gapminder, year == 2007), aes(x = gdpPercap, y = lifeExp, color = continent)) +
+  geom_point() +
+  scale_x_log10(labels = scales::dollar) +
+  geom_text_repel(aes(label = country), size = 3, max.overlaps = 6, show.legend = F) +
+  labs(x = "Renda per capita", y = "Expectativa de vida", color = "Continente", title = "Renda per capita por expectativa de vida (com rótulos)", subtitle = "Análise da relação entre economia e saúde no mundo") +
+  scale_color_brewer(palette = "Set1", labels = c("África", "Américas", "Ásia", "Europa", "Oceania")) +
+  theme_clean()
+graph53
+```
+
+
+```{r}
+graph55 = ggplot(subset(gapminder, year == 2007), aes(x = gdpPercap, y = lifeExp, color = continent)) +
+  annotate(geom = "rect", xmin = 250, xmax = 15000, ymin = 38, ymax = 62, fill = "red", alpha = 0.1) +
+  annotate(geom = "text", x = 16000, y = 40, label = "Grande concentração \nde países africanos", hjust = 0, size = 3, color = "gray60") +
+  annotate(geom = "rect", xmin = 18000, xmax = 55000, ymin = 75, ymax = 85, fill = "blue", alpha = 0.1) +
+  annotate(geom = "text", x = 17000, y = 83, label = "Maioria\n da Europa", hjust = 1, size = 3, color = "gray60") +
+  geom_point() +
+  scale_x_log10(labels = scales::dollar) +
+  labs(x = "Renda per capita", y = "Expectativa de vida", color = "Continente", title = "Renda per capita por expectativa de vida (com anotações)", subtitle = "Análise da relação entre economia e saúde no mundo") +
+  scale_color_brewer(palette = "Set1", labels = c("África", "Américas", "Ásia", "Europa", "Oceania")) +
+  theme_clean()
+graph55
+```
